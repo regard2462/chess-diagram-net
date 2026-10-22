@@ -7,8 +7,6 @@ the squares and checks the result against the rules of chess.
 It comes from the chess diagram recognition of the e-book reader Cozy Shelves (version 0.10.2) and runs without it.
 [Deutsche Fassung](README.de.md)
 
-<p><a href="https://buymeacoffee.com/regard2462"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="40" alt="Buy me a coffee"></a></p>
-
 ## Accuracy
 
 On 1309 diagrams from 23 chess books the network never saw during training, 94.9 % of the diagrams are read without

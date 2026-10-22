@@ -7,8 +7,6 @@ findet das Brett, bereinigt die Felder und prüft das Ergebnis an den Schachrege
 Es stammt aus der Diagrammerkennung des E-Book-Readers Cozy Shelves (Fassung 0.10.2) und läuft ohne ihn.
 [English version](README.md)
 
-<p><a href="https://buymeacoffee.com/regard2462"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="40" alt="Buy me a coffee"></a></p>
-
 ## Genauigkeit
 
 Von 1309 Diagrammen aus 23 Schachbüchern, die das Netz beim Training nie gesehen hat, liest es 94,9 % ohne ein
