@@ -5,6 +5,9 @@ network classifies every square (empty or one of the twelve pieces), and the cod
 the squares and checks the result against the rules of chess.
 
 It comes from the chess diagram recognition of the e-book reader Cozy Shelves (version 0.10.2) and runs without it.
+
+**[Try it in your browser](https://regard2462.github.io/chess-diagram-net/)** – drop in a picture of a diagram, nothing to install.
+
 [Deutsche Fassung](README.de.md)
 
 ## Accuracy
@@ -21,13 +24,13 @@ and scans of very different quality.
 
 ![The demo page: a printed diagram on the left, the recognised position on the right](docs/screenshots/demo.png)
 
-`example/demo.html` is a small page for trying it out. Drop a picture onto it, paste one with Ctrl+V or pick one of
+The demo runs online at **<https://regard2462.github.io/chess-diagram-net/>**. Drop a picture onto it, paste one with Ctrl+V or pick one of
 the samples. It shows the recognised position next to the picture, marks the squares it is least sure about in
 orange, and gives you the FEN to copy or a button that opens the position in the Lichess analysis board. It reads a
 single diagram as well as a whole book page with up to two diagrams, and nothing leaves your computer.
 
-The page loads the recogniser as JavaScript modules, so it has to come from a web server rather than a double-clicked
-file. Any small server will do, for example with Python:
+To run it on your own computer (it is `example/demo.html`): the page loads the recogniser as JavaScript modules, so it
+has to come from a web server rather than a double-clicked file. Any small server will do, for example with Python:
 
 ```
 git clone https://github.com/regard2462/chess-diagram-net.git
