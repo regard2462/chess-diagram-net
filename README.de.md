@@ -5,6 +5,9 @@ faltendes Netz bestimmt für jedes Feld, ob es leer ist oder welche der zwölf F
 findet das Brett, bereinigt die Felder und prüft das Ergebnis an den Schachregeln.
 
 Es stammt aus der Diagrammerkennung des E-Book-Readers Cozy Shelves (Fassung 0.10.2) und läuft ohne ihn.
+
+**[Im Browser ausprobieren](https://regard2462.github.io/chess-diagram-net/)** – Bild eines Diagramms hineinziehen, nichts zu installieren.
+
 [English version](README.md)
 
 ## Genauigkeit
@@ -21,14 +24,14 @@ Koordinaten und Pfeile, und Scans sehr unterschiedlicher Güte.
 
 ![Die Demo-Seite: links ein gedrucktes Diagramm, rechts die erkannte Stellung](docs/screenshots/demo.png)
 
-`example/demo.html` ist eine kleine Seite zum Ausprobieren. Bild darauf ziehen, mit Strg+V einfügen oder eines der
+Die Demo läuft online unter **<https://regard2462.github.io/chess-diagram-net/>**. Bild darauf ziehen, mit Strg+V einfügen oder eines der
 Beispiele wählen. Sie zeigt die erkannte Stellung neben dem Bild, rahmt die Felder orange ein, bei denen sie am
 unsichersten ist, und gibt dir die FEN zum Kopieren oder einen Knopf, der die Stellung im Analysebrett von Lichess
 öffnet. Sie liest ein einzelnes Diagramm genauso wie eine ganze Buchseite mit bis zu zwei Diagrammen, und kein Bild
 verlässt deinen Rechner.
 
-Die Seite lädt die Erkennung als JavaScript-Module, deshalb muss sie von einem Webserver kommen und nicht als
-doppelt geklickte Datei. Jeder kleine Server reicht, zum Beispiel mit Python:
+Auf dem eigenen Rechner (es ist `example/demo.html`): Die Seite lädt die Erkennung als JavaScript-Module, deshalb muss
+sie von einem Webserver kommen und nicht als doppelt geklickte Datei. Jeder kleine Server reicht, zum Beispiel mit Python:
 
 ```
 git clone https://github.com/regard2462/chess-diagram-net.git
