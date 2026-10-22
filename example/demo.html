@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chess Diagram Net – demo</title>
+<!-- Try the recogniser in the browser: drop, paste or pick a picture of a chess diagram (or a whole page with one).
+     Everything runs on this page, no picture leaves the computer. Needs a web server because of the ES modules,
+     for example from the repository folder:  python -m http.server 8000  →  http://localhost:8000/example/demo.html -->
+<style>
+  :root {
+    --bg: #f6f4ef; --card: #ffffff; --text: #1f2328; --muted: #5b636e; --line: #d9d4c8;
+    --light: #efe3cc; --dark: #b48a5c; --accent: #2f6b4f; --warn: #d9480f; --ok: #2b8a3e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #15171a; --card: #1e2125; --text: #e6e6e6; --muted: #9aa3ad; --line: #353a40;
+      --light: #d9ccb4; --dark: #8f6a43; --accent: #6cc196; --warn: #ff8a50; --ok: #69db7c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .lead { color: var(--muted); margin: 0 0 20px; }
+  .drop { display: block; border: 2px dashed var(--line); border-radius: 14px; padding: 22px; text-align: center; background: var(--card); cursor: pointer; }
+  .drop.over { border-color: var(--accent); }
+  .drop b { color: var(--accent); }
+  .samples { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 26px; align-items: center; }
+  .samples span { color: var(--muted); margin-right: 4px; }
+  .samples button { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 4px; cursor: pointer; }
+  .samples button:hover { border-color: var(--accent); }
+  .samples img { display: block; width: 64px; height: 64px; object-fit: cover; border-radius: 6px; }
+  .result { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; background: var(--card);
+    border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+  @media (max-width: 720px) { .result { grid-template-columns: 1fr; } }
+  .result h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .pic { width: 100%; height: auto; border-radius: 8px; background: #fff; }
+  .board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; max-width: 420px; aspect-ratio: 1; border: 2px solid var(--dark); border-radius: 4px; overflow: hidden; container-type: inline-size; }
+  .sq { position: relative; }
+  .sq img { position: absolute; inset: 4%; width: 92%; height: 92%; }
+  .sq.l { background: var(--light); } .sq.d { background: var(--dark); }
+  .sq.unsure { box-shadow: inset 0 0 0 3px var(--warn); }
+  .meta { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .fen { flex: 1; min-width: 0; font: 13px/1.4 ui-monospace, Consolas, monospace; padding: 8px 10px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--bg); color: var(--text); }
+  .btn { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 8px; padding: 7px 12px;
+    font: inherit; cursor: pointer; text-decoration: none; }
+  .btn.primary { background: var(--accent); color: var(--card); }
+  .badge { font-weight: 600; } .badge.good { color: var(--ok); } .badge.bad { color: var(--warn); }
+  .muted { color: var(--muted); font-size: 13px; }
+  select { font: inherit; padding: 6px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+  .err { color: var(--warn); }
+  footer { color: var(--muted); font-size: 13px; margin-top: 30px; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Chess Diagram Net</h1>
+  <p class="lead">Reads the position from a picture of a printed chess diagram – a scan, a photo crop, a screenshot or a
+    whole book page. Everything runs on this page; no picture is uploaded anywhere.</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="image/*" hidden>
+    <b>Drop a picture here</b>, click to choose one, or paste it with Ctrl+V
+  </label>
+  <div class="samples" id="samples"><span>or try a sample:</span></div>
+
+  <div id="out"></div>
+
+  <footer>
+    The squares with an orange frame are the ones the network is least sure about. The position is given from White's
+    side; pick who is to move before you open it in an analysis board.
+    <a href="https://github.com/regard2462/chess-diagram-net">Source code and training (AGPL-3.0)</a>
+  </footer>
+</main>
+
+<script type="module">
+import { fromRGBA } from '../diagram/image.js';
+import { recognize } from '../diagram/recognize.js';
+import { findBoardsInPixels } from '../diagram/find-boards.js';
+import { PIECES } from './pieces.js';
+
+const SAMPLES = ['diagram.png', 'samples/hatched.png', 'samples/grey-scan.png', 'samples/stippled.png',
+  'samples/green.png', 'samples/rotated-scan.png', 'samples/black-at-bottom.png', 'samples/book-page.png'];
+const $ = (s) => document.querySelector(s);
+
+for (const src of SAMPLES) {
+  const b = document.createElement('button');
+  b.title = src.split('/').pop();
+  b.innerHTML = `<img src="${src}" alt="${b.title}">`;
+  b.onclick = () => loadUrl(src);
+  $('#samples').appendChild(b);
+}
+
+const drop = $('#drop');
+$('#file').onchange = (e) => e.target.files[0] && loadBlob(e.target.files[0]);
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) loadBlob(f); };
+window.addEventListener('paste', (e) => {
+  const item = [...e.clipboardData.items].find((i) => i.type.startsWith('image/'));
+  if (item) loadBlob(item.getAsFile());
+});
+
+function loadBlob(blob) { loadUrl(URL.createObjectURL(blob)); }
+
+function loadUrl(url) {
+  const img = new Image();
+  img.onload = () => read(img);
+  img.onerror = () => { $('#out').innerHTML = '<p class="err">This file could not be opened as a picture.</p>'; };
+  img.src = url;
+}
+
+function pixels(img, x = 0, y = 0, w = img.naturalWidth, h = img.naturalHeight, scale = 1) {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w * scale)); c.height = Math.max(1, Math.round(h * scale));
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);   // transparent pictures on white paper
+  g.drawImage(img, x, y, w, h, 0, 0, c.width, c.height);
+  return { canvas: c, data: g.getImageData(0, 0, c.width, c.height).data };
+}
+
+// A whole page: look for boards on a copy about 600 pixels wide, then read each board from the full picture.
+function boardsIn(img) {
+  const W = img.naturalWidth, H = img.naturalHeight, s = Math.min(1, 600 / W);
+  const small = pixels(img, 0, 0, W, H, s);
+  const boxes = findBoardsInPixels(small.data, small.canvas.width, small.canvas.height)
+    .map((b) => ({ x: Math.max(0, b.x / s), y: Math.max(0, b.y / s), w: b.w / s, h: b.h / s }))
+    .map((b) => ({ ...b, w: Math.min(W - b.x, b.w), h: Math.min(H - b.y, b.h) }));
+  // a board that fills most of the picture: read the picture as it is (keeps the margin the recogniser likes)
+  if (!boxes.length || (boxes.length === 1 && boxes[0].w * boxes[0].h > 0.55 * W * H)) return [{ x: 0, y: 0, w: W, h: H }];
+  return boxes;
+}
+
+function read(img) {
+  const out = $('#out');
+  out.innerHTML = '';
+  const t0 = performance.now();
+  for (const box of boardsIn(img)) {
+    const { canvas, data } = pixels(img, box.x, box.y, box.w, box.h);
+    let res;
+    try { res = recognize(fromRGBA(data, canvas.width, canvas.height)); } catch (e) { res = { ok: false, error: e.message }; }
+    out.appendChild(card(canvas, res, performance.now() - t0));
+  }
+}
+
+function card(canvas, res, ms) {
+  const el = document.createElement('section');
+  el.className = 'result';
+  const pic = document.createElement('img');
+  pic.className = 'pic'; pic.src = canvas.toDataURL(); pic.alt = 'the picture';
+  const left = document.createElement('div');
+  left.innerHTML = '<h2>Picture</h2>';
+  left.appendChild(pic);
+  const right = document.createElement('div');
+  if (!res.ok) {
+    right.innerHTML = `<h2>Result</h2><p class="err">No chess board found${res.error ? ': ' + res.error : ''}.</p>
+      <p class="muted">The picture should show one diagram with a little margin around it.</p>`;
+    el.append(left, right);
+    return el;
+  }
+  const unsure = new Set(res.uncertain);
+  // the board as it is printed (image rows from the top), so it can be compared with the picture square by square
+  const board = document.createElement('div');
+  board.className = 'board';
+  res.squares.forEach((s, i) => {
+    const d = document.createElement('div');
+    const lightSq = (s.r + s.c) % 2 === 0;
+    d.className = 'sq ' + (lightSq ? 'l' : 'd') + (unsure.has(i) ? ' unsure' : '');
+    if (s.ch !== '.') d.innerHTML = `<img src="${PIECES[s.ch]}" alt="${s.ch}">`;
+    d.title = s.alt.map(([ch, p]) => `${ch === '.' ? 'empty' : ch} ${(p * 100).toFixed(0)} %`).join(' · ');
+    board.appendChild(d);
+  });
+  const conf = Math.round(res.confidence * 100);
+  right.innerHTML = '<h2>Recognised position</h2>';
+  right.appendChild(board);
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  meta.innerHTML = `
+    <div class="row"><span class="badge ${conf >= 80 ? 'good' : 'bad'}">${conf} % sure</span>
+      <span class="muted">${res.orientation === 'white' ? 'White' : 'Black'} at the bottom · ${unsure.size} unsure square${unsure.size === 1 ? '' : 's'} · ${Math.round(ms)} ms</span></div>
+    <div class="row"><label class="muted">To move <select class="stm"><option value="w">White</option><option value="b">Black</option></select></label></div>
+    <div class="row"><input class="fen" readonly><button class="btn copy">Copy FEN</button></div>
+    <div class="row"><a class="btn primary lichess" target="_blank" rel="noopener">Open on Lichess</a></div>`;
+  right.appendChild(meta);
+  const fenEl = meta.querySelector('.fen'), stm = meta.querySelector('.stm'), lichess = meta.querySelector('.lichess');
+  const update = () => {
+    const fen = `${res.placement} ${stm.value} - - 0 1`;
+    fenEl.value = fen;
+    lichess.href = 'https://lichess.org/analysis/standard/' + fen.replace(/ /g, '_');
+  };
+  stm.onchange = update; update();
+  meta.querySelector('.copy').onclick = (e) => { navigator.clipboard?.writeText(fenEl.value); e.target.textContent = 'Copied'; };
+  el.append(left, right);
+  return el;
+}
+
+const first = new URLSearchParams(location.search).get('sample');
+if (first) loadUrl(SAMPLES[+first] || first);
+</script>
+</body>
+</html>

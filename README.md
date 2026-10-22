@@ -9,13 +9,43 @@ It comes from the chess diagram recognition of the e-book reader Cozy Shelves (v
 
 ## Accuracy
 
+![Six diagrams in different printing styles and the positions read from them](docs/screenshots/styles.png)
+
 On 1309 diagrams from 23 chess books the network never saw during training, 94.9 % of the diagrams are read without
 a single wrong square. The books cover hatched, grey, stippled and plain dark squares, frames, coordinates and arrows,
 and scans of very different quality.
 
-## Use
+## How to use it
 
-Node 18 or newer, no dependencies:
+### In the browser – no programming
+
+![The demo page: a printed diagram on the left, the recognised position on the right](docs/screenshots/demo.png)
+
+`example/demo.html` is a small page for trying it out. Drop a picture onto it, paste one with Ctrl+V or pick one of
+the samples. It shows the recognised position next to the picture, marks the squares it is least sure about in
+orange, and gives you the FEN to copy or a button that opens the position in the Lichess analysis board. It reads a
+single diagram as well as a whole book page with up to two diagrams, and nothing leaves your computer.
+
+The page loads the recogniser as JavaScript modules, so it has to come from a web server rather than a double-clicked
+file. Any small server will do, for example with Python:
+
+```
+git clone https://github.com/regard2462/chess-diagram-net.git
+cd chess-diagram-net
+python -m http.server 8000
+```
+
+Then open <http://localhost:8000/example/demo.html>. Without git, use *Code → Download ZIP* on GitHub and start the
+server in the unpacked folder; `npx serve` works instead of Python if you have Node.
+
+Best results: one diagram with a little white margin, taken straight on. Scans, screenshots, JPEG pictures and
+slightly skewed scans all work, see the styles above.
+
+### On the command line
+
+![Reading two pictures on the command line](docs/screenshots/cli.png)
+
+Node 18 or newer, no dependencies, PNG pictures:
 
 ```
 node example/read.mjs example/diagram.png
@@ -28,7 +58,7 @@ rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR
 orientation white, confidence 98 %
 ```
 
-In your own code:
+### In your own code
 
 ```js
 import { fromRGBA } from './diagram/image.js';
@@ -42,7 +72,9 @@ const res = recognize(fromRGBA(rgbaBytes, width, height));
 ```
 
 The picture should show the diagram with a little margin. `diagram/find-boards.js` finds up to two boards on a whole
-page. The recogniser runs on the CPU in under a second per diagram, also in a browser or a web worker.
+page (`findBoardsInPixels`, used by the demo). The recogniser runs on the CPU in under a second per diagram, also in a
+browser or a web worker. The side to move, castling rights and move number are not in a diagram; the demo adds
+`w - - 0 1` and lets you switch to Black.
 
 ## Contents
 
@@ -50,7 +82,7 @@ page. The recogniser runs on the CPU in under a second per diagram, also in a br
 | --- | --- |
 | `diagram/` | the recogniser: board search (`locate.js`), square analysis (`squares.js`), arrows, the network (`net.js`, weights in `net-weights.js`, 102 KB, int8), the decision with the chess rules (`decode.js`, `recognize.js`) |
 | `training/` | generator for synthetic diagrams, extraction of training squares, training, benchmark, tuning |
-| `example/` | a command line example and a test picture |
+| `example/` | the browser demo (`demo.html`, with the cburnett pieces in `pieces.js` for drawing the result), the command line example (`read.mjs`) and sample pictures in `samples/` |
 
 ## Training
 
@@ -77,4 +109,5 @@ the checked squares into training shards and test diagrams.
 ## License
 
 AGPL-3.0-or-later, see [LICENSE](LICENSE). The cburnett chess pieces used by the generator are by Colin M.L. Burnett
-(GPL-2.0-or-later) and come with chessground (GPL-3.0-or-later). The weights contain no font data.
+(GPL-2.0-or-later) and come with chessground (GPL-3.0-or-later); the demo draws the result with the same pieces.
+The sample pictures are made by the generator. The weights contain no font data.

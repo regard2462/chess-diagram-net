@@ -9,13 +9,44 @@ Es stammt aus der Diagrammerkennung des E-Book-Readers Cozy Shelves (Fassung 0.1
 
 ## Genauigkeit
 
+![Sechs Diagramme in verschiedenen Druckstilen und die daraus gelesenen Stellungen](docs/screenshots/styles.png)
+
 Von 1309 Diagrammen aus 23 Schachbüchern, die das Netz beim Training nie gesehen hat, liest es 94,9 % ohne ein
 einziges falsches Feld. Die Bücher haben schraffierte, graue, gepunktete und einfarbige dunkle Felder, Rahmen,
 Koordinaten und Pfeile, und Scans sehr unterschiedlicher Güte.
 
 ## Benutzung
 
-Node 18 oder neuer, ohne Abhängigkeiten:
+### Im Browser – ohne Programmieren
+
+![Die Demo-Seite: links ein gedrucktes Diagramm, rechts die erkannte Stellung](docs/screenshots/demo.png)
+
+`example/demo.html` ist eine kleine Seite zum Ausprobieren. Bild darauf ziehen, mit Strg+V einfügen oder eines der
+Beispiele wählen. Sie zeigt die erkannte Stellung neben dem Bild, rahmt die Felder orange ein, bei denen sie am
+unsichersten ist, und gibt dir die FEN zum Kopieren oder einen Knopf, der die Stellung im Analysebrett von Lichess
+öffnet. Sie liest ein einzelnes Diagramm genauso wie eine ganze Buchseite mit bis zu zwei Diagrammen, und kein Bild
+verlässt deinen Rechner.
+
+Die Seite lädt die Erkennung als JavaScript-Module, deshalb muss sie von einem Webserver kommen und nicht als
+doppelt geklickte Datei. Jeder kleine Server reicht, zum Beispiel mit Python:
+
+```
+git clone https://github.com/regard2462/chess-diagram-net.git
+cd chess-diagram-net
+python -m http.server 8000
+```
+
+Dann <http://localhost:8000/example/demo.html> öffnen. Ohne git auf GitHub *Code → Download ZIP* wählen und den
+Server im entpackten Ordner starten; mit Node geht statt Python auch `npx serve`.
+
+Am besten: ein Diagramm mit etwas weißem Rand, gerade von vorn. Scans, Bildschirmfotos, JPEG-Bilder und leicht
+schief eingescannte Seiten gehen, siehe die Stile oben.
+
+### Auf der Kommandozeile
+
+![Zwei Bilder auf der Kommandozeile gelesen](docs/screenshots/cli.png)
+
+Node 18 oder neuer, ohne Abhängigkeiten, PNG-Bilder:
 
 ```
 node example/read.mjs example/diagram.png
@@ -28,7 +59,7 @@ rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR
 orientation white, confidence 98 %
 ```
 
-Im eigenen Code:
+### Im eigenen Code
 
 ```js
 import { fromRGBA } from './diagram/image.js';
@@ -42,8 +73,9 @@ const res = recognize(fromRGBA(rgbaBytes, width, height));
 ```
 
 Das Bild sollte das Diagramm mit etwas Rand zeigen. `diagram/find-boards.js` findet bis zu zwei Bretter auf einer
-ganzen Seite. Die Erkennung braucht auf der CPU weniger als eine Sekunde je Diagramm und läuft auch im Browser oder
-in einem Web Worker.
+ganzen Seite (`findBoardsInPixels`, die Demo nutzt es). Die Erkennung braucht auf der CPU weniger als eine Sekunde je
+Diagramm und läuft auch im Browser oder in einem Web Worker. Wer am Zug ist, Rochaderechte und Zugnummer stehen nicht
+im Diagramm; die Demo ergänzt `w - - 0 1` und lässt dich auf Schwarz umstellen.
 
 ## Inhalt
 
@@ -51,7 +83,7 @@ in einem Web Worker.
 | --- | --- |
 | `diagram/` | die Erkennung: Brettsuche (`locate.js`), Feldanalyse (`squares.js`), Pfeile, das Netz (`net.js`, Gewichte in `net-weights.js`, 102 KB, int8), die Entscheidung mit den Schachregeln (`decode.js`, `recognize.js`) |
 | `training/` | Erzeuger für künstliche Diagramme, Auszug der Trainingsfelder, Training, Messung, Feinabstimmung |
-| `example/` | ein Kommandozeilenbeispiel und ein Testbild |
+| `example/` | die Browser-Demo (`demo.html`, mit den cburnett-Figuren in `pieces.js` zum Zeichnen des Ergebnisses), das Kommandozeilenbeispiel (`read.mjs`) und Beispielbilder in `samples/` |
 
 ## Training
 
@@ -79,4 +111,5 @@ Echte Bücher: `training/harvest.py` rendert die Seiten eines Ordners voller PDF
 ## Lizenz
 
 AGPL-3.0-or-later, siehe [LICENSE](LICENSE). Die cburnett-Figuren, die der Erzeuger nutzt, stammen von Colin M.L.
-Burnett (GPL-2.0-or-later) und kommen mit chessground (GPL-3.0-or-later). Die Gewichte enthalten keine Schriftdaten.
+Burnett (GPL-2.0-or-later) und kommen mit chessground (GPL-3.0-or-later); die Demo zeichnet das Ergebnis mit denselben
+Figuren. Die Beispielbilder stammen aus dem Erzeuger. Die Gewichte enthalten keine Schriftdaten.
