@@ -1,3 +1,8 @@
 node_modules/
 __pycache__/
 *.pt
+
+# Lokale Einstellungen von Entwicklungswerkzeugen
+.claude/settings.local.json
+.mcp.json
+.env
